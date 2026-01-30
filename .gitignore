@@ -1,6 +1,15 @@
 .env
+app/.env
 .venv/
 Videos/
 Outputs/
+
+
+
 app/services/audio_pipeline/__pycache__/
+app/services/audio_pipeline/__pycache__/
+app/services/frame_inference/__pycache__/
+app/services/video_pipeline/__pycache__/
+
+
 Structure.txt

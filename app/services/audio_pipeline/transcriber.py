@@ -1,22 +1,27 @@
 import os
-import json
 from groq import Groq
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
-load_dotenv('../../../.env')
+# load_dotenv('../../../.env')
 
-client = Groq()
+client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+# audio_path='YOUR_AUDIO_PATH'
 
-filename = "../../../Outputs/The Snowflake Myth.mp3"
+def transcribe_audio(audio_path):
+  with open(audio_path, "rb") as file:
+      transcription = client.audio.transcriptions.create(
+        file=file,
+        model="whisper-large-v3",
+        response_format='verbose_json',
+        timestamp_granularities=["segment"],
+        language="en"
+      )
+  print('Audio has been transcribed \n',transcription.text)
+  return transcription
 
-with open(filename, "rb") as file:
-    transcription = client.audio.transcriptions.create(
-      file=file,
-      model="whisper-large-v3",
-      prompt="Make sure the segments are divide contexually.",
-      response_format="verbose_json",  # Optional
-      timestamp_granularities = ["segment"], 
-      language="en"
-    )
-print(json.dumps(transcription, indent=4, default=str))
+# def main():
+#   out=transcribe_audio(audio_path)
+#   print(out.segments[0]['text'])
 
+# if __name__ == "__main__":
+#   main()

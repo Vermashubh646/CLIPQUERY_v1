@@ -1,5 +1,14 @@
 import cv2
 import os
+import base64
+import cv2
+
+def frame_to_base64(frame):
+    success, buffer = cv2.imencode(".jpg", frame)
+    if not success:
+        raise RuntimeError("JPEG encode failed")
+
+    return base64.b64encode(buffer).decode("utf-8")
 
 def extract_frame_at_time(video_path, time_sec, output_path):
     """
@@ -39,9 +48,11 @@ def extract_frame_at_time(video_path, time_sec, output_path):
         raise RuntimeError("Failed to read the frame at the specified time.")
 
     cv2.imwrite(output_path, frame)
-    print(f"Frame at {time_sec:.2f}s saved to {output_path}")
-
     cap.release()
+    
+    print(f"Frame at {time_sec:.2f}s saved to {output_path}")
+    return frame
+    
 
 
 
