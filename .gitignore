@@ -1,0 +1,6 @@
+.env
+.venv/
+Videos/
+Outputs/
+app/services/audio_pipeline/__pycache__/
+Structure.txt
