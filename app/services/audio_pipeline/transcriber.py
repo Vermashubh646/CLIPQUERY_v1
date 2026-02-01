@@ -16,7 +16,7 @@ def transcribe_audio(audio_path):
         timestamp_granularities=["segment"],
         language="en"
       )
-  print('Audio has been transcribed \n',transcription.text)
+  print('Audio has been transcribed \n',transcription.text[:21],"....")
   return transcription
 
 # def main():
