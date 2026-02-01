@@ -4,10 +4,10 @@ from .video_pipeline.scene_detect import get_scene_keyframes
 from .audio_pipeline.extractor import extract_audio_from_video
 from .audio_pipeline.transcriber import transcribe_audio
 from .frame_inference.frame_captioning import caption_frames
-import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import time
+import os
 
 caption_executor = ThreadPoolExecutor(max_workers=5)
 
@@ -100,6 +100,9 @@ def process_clip(needs_cut,video_path,current_clip_path,frames_dir,audio_path,st
 
 def cut_extract_transcript(video_path, output_dir):
 
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+
     duration = get_video_duration(video_path)
     base_name =os.path.splitext(video_path.split('/')[-1])[0]
 
@@ -155,8 +158,13 @@ def cut_extract_transcript(video_path, output_dir):
         }
         final_struct.append(out_struct)
     
+        # for reference purpose
         with open(os.path.join(output_dir,f"{base_name}_final.json"),'w') as f:
                 json.dump(final_struct, f, indent=2)
+        
+        # for reference purpose
+        with open(os.path.join(output_dir,f"{base_name}_complete_transcript.txt"),'w') as f:
+                f.write(complete_transcript)
         
         # sliding clip window in the end, so that in between codes can use these
         duration -= STRIDE
@@ -171,5 +179,7 @@ def cut_extract_transcript(video_path, output_dir):
         time.sleep(30)
     print("Raw data extraction process over....")
 
-    return final_struct, complete_transcript
+    return {
+        "raw_data":final_struct, "complete_transcript":complete_transcript
+    }
 
