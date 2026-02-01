@@ -5,6 +5,8 @@ from .audio_pipeline.extractor import extract_audio_from_video
 from .audio_pipeline.transcriber import transcribe_audio
 from .frame_inference.frame_captioning import caption_frames
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+import shutil
 import json
 import time
 import os
@@ -94,6 +96,14 @@ def process_clip(needs_cut,video_path,current_clip_path,frames_dir,audio_path,st
             "text":segment['text']
         })
 
+    # # in order to delete audio,video and frames
+    # for path in [Path(current_clip_path),Path(audio_path),Path(frames_dir)]:    
+    #     if path.is_file():
+    #         path.unlink()
+    #     elif path.is_dir():
+    #         shutil.rmtree(path)
+    # print("Deleted Frames, audio and video clip....")
+
     return visuals_captions, audio_segments, audio_transcription.text
 
 
@@ -146,11 +156,13 @@ def cut_extract_transcript(video_path, output_dir):
         # definig path of audio file
         audio_path = os.path.join(output_dir,f"{base_name}_{start}_{end}.mp3")
 
+        # original clip processing function
         visuals_captions, audio_segments, full_transcipt= process_clip(needs_cut,video_path,current_clip_path,frames_dir,audio_path,start,end,base_name)
 
         complete_transcript+=full_transcipt
 
         out_struct={
+            'video_name':base_name,
             'start_time':start,
             'end_time':end,
             'audio_transcript':audio_segments,
@@ -180,6 +192,7 @@ def cut_extract_transcript(video_path, output_dir):
     print("Raw data extraction process over....")
 
     return {
+        "output_dir":output_dir,
         "raw_data":final_struct, "complete_transcript":complete_transcript
     }
 

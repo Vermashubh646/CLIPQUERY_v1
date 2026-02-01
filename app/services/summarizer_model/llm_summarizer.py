@@ -1,13 +1,23 @@
-from langchain_groq import ChatGroq
+# from langchain_groq import ChatGroq
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnableParallel, RunnableLambda
+from langchain_core.runnables import RunnableLambda
+from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
 import os
 
 # from dotenv import load_dotenv
 # load_dotenv('../../../.env')
 
-model = ChatGroq(model="llama-3.3-70b-versatile")
+# model = ChatGroq(model="llama-3.3-70b-versatile")
+
+llm=HuggingFaceEndpoint(
+    repo_id="deepseek-ai/DeepSeek-V3.1",
+    task="text-generation",
+    max_new_tokens=2048,
+    huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_ACCESS_TOKEN")
+)#type:ignore
+
+model = ChatHuggingFace(llm=llm)
 
 prompt_summarizer = PromptTemplate(
     template="""
@@ -40,7 +50,7 @@ prompt_summarizer = PromptTemplate(
         - Use the timestamps in the logs to ensure the narrative is chronologically correct. Do not mix up the order of events.
 
         OUTPUT FORMAT:
-        Return ONLY the raw narrative text.Allowed to be long and detailed.If Multiple paragraphs are needed, just make then one long string. Do not include markdown, preambles, or "Here is the summary."
+        Return ONLY the raw narrative text.Allowed to be long and detailed.Even if multiple paragraphs are needed to output, just make then one long string. Do not include markdown, preambles, or "Here is the summary."
 
         GLOBAL CONTEXT: "{global_context}"
 
