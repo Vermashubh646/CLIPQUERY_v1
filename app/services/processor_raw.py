@@ -7,7 +7,7 @@ from .frame_inference.frame_captioning import caption_frames
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 import shutil
-import json
+# import json
 import time
 import os
 
@@ -191,9 +191,9 @@ def cut_extract_transcript(video_path, output_dir):
         time.sleep(30)
     print("Raw data extraction process over....")
 
-    # #  deletes the folder itself (to uncomment when to push onto server)
-    # if Path(output_dir).is_dir():
-    #         shutil.rmtree(Path(output_dir))
+    #  deletes the folder itself (to uncomment when to push onto server)
+    if Path(output_dir).is_dir():
+            shutil.rmtree(Path(output_dir))
 
     return {
         "output_dir":output_dir,
