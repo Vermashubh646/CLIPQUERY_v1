@@ -193,6 +193,7 @@ def cut_extract_transcript(video_path, output_dir):
 
     return {
         "output_dir":output_dir,
-        "raw_data":final_struct, "complete_transcript":complete_transcript
+        "raw_data":final_struct,
+        "complete_transcript":complete_transcript
     }
 

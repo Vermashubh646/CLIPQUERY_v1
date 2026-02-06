@@ -12,6 +12,9 @@ def raw_data_to_documents(raw_data):
                 page_content=item["clip_narrative"],
                 metadata={
                     "video_name": item["video_name"],
+                    "video_id": item["video_id"],        
+                    "bucket": item["bucket"],           
+                    "key": item["key"], 
                     "start_time": item["start_time"],
                     "end_time": item["end_time"],
                     "clip_narrative":item["clip_narrative"]
@@ -23,7 +26,7 @@ def raw_data_to_documents(raw_data):
     return documents, uuids
 
 def pinecone_sink(output):
-    raw_data = output["updated_data"]
+    raw_data = output["processed_json"]["raw_data"]
 
     documents, ids = raw_data_to_documents(raw_data)
 

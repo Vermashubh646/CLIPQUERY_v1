@@ -2,8 +2,10 @@ from .global_context.global_context_extractor import global_context_pipe
 from .json_serialize.json_serialize import get_logs_runnable
 from .processor_raw import cut_extract_transcript
 from .summarizer_model.llm_summarizer import summarizer_pipe
+from .integrate_s3_bucket.bucket import upload_to_bucket
 
 from langchain_core.runnables import RunnableLambda, RunnableParallel
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 import json
 
@@ -17,52 +19,78 @@ parallel_global_context=RunnableParallel({
     "output_dir" : RunnableLambda(lambda x: x['output_dir']) 
 })
 
+def parallel_summarize_clips(parallel_global_context_output):
+
+    raw_data=parallel_global_context_output["raw_data"]
+    global_context = parallel_global_context_output["global_context"]
+    max_workers=4
+
+    # creating summarize func for a clip
+    def summarize_one(clip):
+        return summarizer_pipe.invoke({
+            "global_context": global_context,
+            **get_logs_runnable.invoke(clip)
+        })
+
+    results = [None] * len(raw_data)
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {
+            executor.submit(summarize_one, clip): i
+            for i, clip in enumerate(raw_data)
+        }
+
+        for future in as_completed(futures):
+            idx = futures[future]
+            results[idx] = future.result()
+
+    return  {
+        "summarized_log":results,
+        ** parallel_global_context_output
+        }
+
+    return results
+
 # parallel chain to extract summarized_log
-parallel_process_json=RunnableParallel({
-    "summarized_log":RunnableLambda(
-        lambda x: [
-            summarizer_pipe.invoke({
-                "global_context":x['global_context'], # type: ignore
-                **get_logs_runnable.invoke(clip_data)
-            })
-            for clip_data in x["raw_data"] # type: ignore
-        ]   
-    ),
-    "global_context": RunnableLambda(lambda x: x['global_context']),
-    "raw_data" : RunnableLambda(lambda x: x['raw_data']), 
-    "output_dir" : RunnableLambda(lambda x: x['output_dir'])  
-})
+parallel_summarize_json=RunnableLambda(parallel_summarize_clips)
 
 json_processing_pipe =(
-    parallel_global_context | parallel_process_json
+    parallel_global_context | parallel_summarize_json
 )
 
-def update_json(summarized_log,global_context,raw_data,output_dir):
-    for clip,summary in zip(raw_data,summarized_log):
+def update_json(updated_video_data):
+
+    processed_json = updated_video_data['processed_json']
+    bucket_data = updated_video_data['bucket_data']
+    
+    for clip,summary in zip(processed_json["raw_data"],processed_json["summarized_log"]):
         clip['clip_narrative'] = summary
+        clip["video_id"]= bucket_data["video_id"]        
+        clip["bucket"]= bucket_data["bucket"]           
+        clip["key"]=bucket_data["key"] 
     
     # writing new json
-    base_name=output_dir.split("/")[-1]
-    file_path=os.path.join(output_dir,f"{base_name}_final_updated.json")
+    base_name=processed_json["output_dir"].split("/")[-1]
+    file_path=os.path.join(processed_json["output_dir"],f"{base_name}_final_updated.json")
     with open(file_path,'w') as f:
-                json.dump(raw_data, f, indent=2)
+        json.dump(processed_json["raw_data"], f, indent=2)
                 
     print(f"New updated json at {file_path}")
 
-    return {
-        "summarized_log":summarized_log,
-        "global_context":global_context,
-        "updated_data":raw_data
-    }
+    return updated_video_data
 
 # pipeline function for raw data extraction
-update_json_pipe = RunnableLambda(lambda x: update_json(
-       summarized_log=x["summarized_log"],global_context=x['global_context'],raw_data=x['raw_data'],output_dir=x['output_dir']))# type: ignore
+update_json_pipe = RunnableLambda(update_json)
 
+# parallelize the video processing and bucket storing pipe
+parallel_combined_pipe=RunnableParallel({
+    "processed_json":raw_pipe | json_processing_pipe,
+    "bucket_data": upload_to_bucket,
+})
 
 # final combined pipeline
 ultimate_video_pipe=(
-    raw_pipe | json_processing_pipe | update_json_pipe
+    parallel_combined_pipe | update_json_pipe
 )
 
 
