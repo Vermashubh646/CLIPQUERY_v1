@@ -47,7 +47,8 @@ def extract_frame_at_time(video_path, time_sec, output_path):
     if not ret:
         raise RuntimeError("Failed to read the frame at the specified time.")
 
-    cv2.imwrite(output_path, frame)
+    # no need to save image
+    # cv2.imwrite(output_path, frame)
     cap.release()
     
     print(f"Frame at {time_sec:.2f}s saved to {output_path}")

@@ -49,7 +49,6 @@ def parallel_summarize_clips(parallel_global_context_output):
         ** parallel_global_context_output
         }
 
-    return results
 
 # parallel chain to extract summarized_log
 parallel_summarize_json=RunnableLambda(parallel_summarize_clips)

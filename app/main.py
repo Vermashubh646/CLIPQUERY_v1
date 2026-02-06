@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv('.env')
 
-from services.pinecone_integrate.update_vector_db import add_to_pinecone
+from services.pinecone_integrate.update_vector_db import add_to_pinecone, delete_indexes
 from services.processor_final_data import ultimate_video_pipe,json_processing_pipe,update_json_pipe
 from services.orchestrate_pipeline_db import add_video
 
@@ -13,11 +13,14 @@ output_path="../Outputs/"
 file_name="Regeneration in Action ｜ Building Resilient Farms in Iowa ｜ National Geographic.mp4"
 base_name =os.path.splitext(file_name)[0]
 out_path=os.path.join(output_path,base_name)
+USER_ID=56985
 
-data = add_video.invoke({"video_path":os.path.join(input_video,file_name),"output_dir":out_path})
+data = add_video.invoke({"video_path":os.path.join(input_video,file_name),"output_dir":out_path,"user_id":USER_ID})
 
 with open("data.json",'w') as f:
     json.dump(data["updated_data"], f, indent=2)
+
+# delete_indexes()
 
 # data=ultimate_video_pipe.invoke({"video_path":os.path.join(input_video,file_name),"output_dir":out_path})
 

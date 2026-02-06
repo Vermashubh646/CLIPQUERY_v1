@@ -8,12 +8,12 @@ BUCKET_NAME = "clipquerybucket"
 
 def upload_video(file_data: dict):
     video_id = str(uuid.uuid4())
-    ext = file_data["file_path"].split(".")[-1]
+    ext = file_data["video_path"].split(".")[-1]
 
-    object_key = f"videos/{file_data["user_id"]}/{video_id}.{ext}"
+    object_key = f"videos/{file_data['user_id']}/{video_id}.{ext}"
 
     s3.upload_file(
-        file_data["file_path"],
+        file_data["video_path"],
         BUCKET_NAME,
         object_key,
         ExtraArgs={
@@ -34,7 +34,7 @@ def delete_video(file_data: dict):
     s3.delete_object(
         Bucket=file_data["bucket"],
         Key=file_data['key']
-)
+    )
     print(f"Video {file_data['key']} deleted")
 
     return file_data

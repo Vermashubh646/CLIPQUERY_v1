@@ -96,13 +96,13 @@ def process_clip(needs_cut,video_path,current_clip_path,frames_dir,audio_path,st
             "text":segment['text']
         })
 
-    # # in order to delete audio,video and frames
-    # for path in [Path(current_clip_path),Path(audio_path),Path(frames_dir)]:    
-    #     if path.is_file():
-    #         path.unlink()
-    #     elif path.is_dir():
-    #         shutil.rmtree(path)
-    # print("Deleted Frames, audio and video clip....")
+    # in order to delete audio,video and frames
+    for path in [Path(current_clip_path),Path(audio_path),Path(frames_dir)]:    
+        if path.is_file():
+            path.unlink()
+        elif path.is_dir():
+            shutil.rmtree(path)
+    print("Deleted Frames, audio and video clip....")
 
     return visuals_captions, audio_segments, audio_transcription.text
 
@@ -110,8 +110,8 @@ def process_clip(needs_cut,video_path,current_clip_path,frames_dir,audio_path,st
 
 def cut_extract_transcript(video_path, output_dir):
 
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
+    # Create all parents and don’t crash if it already exists
+    os.makedirs(output_dir, exist_ok=True)
 
     duration = get_video_duration(video_path)
     base_name =os.path.splitext(video_path.split('/')[-1])[0]
@@ -170,13 +170,13 @@ def cut_extract_transcript(video_path, output_dir):
         }
         final_struct.append(out_struct)
     
-        # for reference purpose
-        with open(os.path.join(output_dir,f"{base_name}_final.json"),'w') as f:
-                json.dump(final_struct, f, indent=2)
+        # # for reference purpose
+        # with open(os.path.join(output_dir,f"{base_name}_final.json"),'w') as f:
+        #         json.dump(final_struct, f, indent=2)
         
-        # for reference purpose
-        with open(os.path.join(output_dir,f"{base_name}_complete_transcript.txt"),'w') as f:
-                f.write(complete_transcript)
+        # # for reference purpose
+        # with open(os.path.join(output_dir,f"{base_name}_complete_transcript.txt"),'w') as f:
+        #         f.write(complete_transcript)
         
         # sliding clip window in the end, so that in between codes can use these
         duration -= STRIDE
@@ -190,6 +190,10 @@ def cut_extract_transcript(video_path, output_dir):
         print("Waiting 30sec to prevent api limit hitting....")
         time.sleep(30)
     print("Raw data extraction process over....")
+
+    # #  deletes the folder itself (to uncomment when to push onto server)
+    # if Path(output_dir).is_dir():
+    #         shutil.rmtree(Path(output_dir))
 
     return {
         "output_dir":output_dir,
