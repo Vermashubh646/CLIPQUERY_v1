@@ -68,13 +68,13 @@ def update_json(updated_video_data):
         clip["bucket"]= bucket_data["bucket"]           
         clip["key"]=bucket_data["key"] 
     
-    # writing new json
-    base_name=processed_json["output_dir"].split("/")[-1]
-    file_path=os.path.join(processed_json["output_dir"],f"{base_name}_final_updated.json")
-    with open(file_path,'w') as f:
-        json.dump(processed_json["raw_data"], f, indent=2)
+    # # writing new json
+    # base_name=processed_json["output_dir"].split("/")[-1]
+    # file_path=os.path.join(processed_json["output_dir"],f"{base_name}_final_updated.json")
+    # with open(file_path,'w') as f:
+    #     json.dump(processed_json["raw_data"], f, indent=2)
                 
-    print(f"New updated json at {file_path}")
+    # print(f"New updated json at {file_path}")
 
     return updated_video_data
 

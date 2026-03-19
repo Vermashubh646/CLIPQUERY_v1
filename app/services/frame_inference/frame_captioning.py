@@ -1,10 +1,10 @@
 from groq import Groq
 import os
+from app.core.config import settings
 # from dotenv import load_dotenv
 
 # load_dotenv('../../../.env')
-
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+client = Groq(api_key=settings.GROQ_API_KEY.get_secret_value())
 
 def caption_frames(base64_image):
     chat_completion = client.chat.completions.create(

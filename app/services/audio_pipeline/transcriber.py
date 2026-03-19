@@ -1,10 +1,10 @@
 import os
 from groq import Groq
+from app.core.config import settings
 # from dotenv import load_dotenv
 
 # load_dotenv('../../../.env')
-
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+client = Groq(api_key=settings.GROQ_API_KEY.get_secret_value())
 # audio_path='YOUR_AUDIO_PATH'
 
 def transcribe_audio(audio_path):

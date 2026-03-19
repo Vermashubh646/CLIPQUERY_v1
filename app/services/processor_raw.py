@@ -187,8 +187,8 @@ def cut_extract_transcript(video_path, output_dir):
             break
 
         # in order to not to hit api limit
-        print("Waiting 30sec to prevent api limit hitting....")
-        time.sleep(30)
+        print("Waiting 35sec to prevent api limit hitting....")
+        time.sleep(35)
     print("Raw data extraction process over....")
 
     #  deletes the folder itself (to uncomment when to push onto server)

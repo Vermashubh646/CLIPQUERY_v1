@@ -1,9 +1,3 @@
-import os
-import json
-from dotenv import load_dotenv
-
-load_dotenv('.env')
-
 from fastapi import FastAPI
 from .api.v1.router import api_router
 

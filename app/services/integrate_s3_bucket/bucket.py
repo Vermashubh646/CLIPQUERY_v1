@@ -1,10 +1,15 @@
 import boto3
 import uuid
 from langchain_core.runnables import RunnableLambda
+from app.core.config import settings
 
-s3 = boto3.client("s3", region_name="us-east-1")
+s3 = boto3.client("s3", 
+    region_name=settings.AWS_REGION,
+    aws_access_key_id=settings.AWS_ACCESS_KEY_ID.get_secret_value(),
+    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY.get_secret_value()
+)
 
-BUCKET_NAME = "clipquerybucket"
+BUCKET_NAME = settings.S3_BUCKET_NAME
 
 def upload_video(file_data: dict):
     video_id = str(uuid.uuid4())
@@ -21,6 +26,7 @@ def upload_video(file_data: dict):
         }
     )
 
+    print(f"Video {video_id} Uploaded to bucket")
     return {
         "video_id": video_id,
         "bucket": BUCKET_NAME,

@@ -3,19 +3,20 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda
 from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
-import os
+from app.core.config import settings
+
 
 # from dotenv import load_dotenv
 # load_dotenv('../../../.env')
 
-# model = ChatGroq(model="llama-3.3-70b-versatile")
+# model = ChatGroq(model="llama-3.3-70b-versatile",api_key=settings.GROQ_API_KEY.get_secret_value())
 
 llm=HuggingFaceEndpoint(
     repo_id="deepseek-ai/DeepSeek-V3.1",
     task="text-generation",
     max_new_tokens=2048,
-    huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_ACCESS_TOKEN")
-)#type:ignore
+    huggingfacehub_api_token=settings.HUGGINGFACEHUB_ACCESS_TOKEN.get_secret_value()
+) #type:ignore
 
 model = ChatHuggingFace(llm=llm)
 
