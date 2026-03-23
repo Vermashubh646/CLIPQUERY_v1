@@ -1,11 +1,29 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 from .api.v1.router import api_router
+from .core.config import settings
+from .core.handlers import register_exception_handlers
+
 
 app = FastAPI(title="ClipQuery Backend")
+
+# ── CORS ─────────────────────────────────────────────────────
+# Allows frontends / external clients on other origins to call
+# this API.  Origins are configured via CORS_ALLOWED_ORIGINS
+# in .env (defaults to ["*"] for local dev).
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Attach all routes
 app.include_router(api_router, prefix="/api")
 
+register_exception_handlers(app)
 
 # input_video = "../Videos/"
 # output_path="../Outputs/"

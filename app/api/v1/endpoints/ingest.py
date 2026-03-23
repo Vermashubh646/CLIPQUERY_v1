@@ -1,5 +1,7 @@
 from app.services.orchestrate_pipeline_db import add_video
 from app.schemas.models import VideoUploadResponse, JobStatusResponse
+from app.core.exceptions import ProcessingError, VideoFormatError
+
 from fastapi import APIRouter, UploadFile, File, BackgroundTasks, HTTPException
 from uuid import uuid4
 import shutil
@@ -35,6 +37,7 @@ def run_pipeline(job_id: str, temp_path: str, temp_out_path: str, user_id: str):
             "video_id": None,
             "message": f"Processing failed: {str(e)}"
         }
+        raise ProcessingError(f"Pipeline failed: {str(e)}")
 
     finally:
         # Cleanup temp files
@@ -46,6 +49,10 @@ def run_pipeline(job_id: str, temp_path: str, temp_out_path: str, user_id: str):
 
 @router.post("/upload", response_model=VideoUploadResponse)
 def upload(USER_ID: str, file: UploadFile = File(...), background_tasks: BackgroundTasks = BackgroundTasks()):
+
+    if not file.content_type or not file.content_type.startswith("video/"):
+        raise VideoFormatError(f"File '{file.filename}' is not a valid video format. Got: {file.content_type}")
+
 
     job_id = str(uuid4())
     jobs[job_id] = {

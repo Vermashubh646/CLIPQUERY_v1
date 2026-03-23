@@ -2,6 +2,7 @@ import boto3
 import uuid
 from langchain_core.runnables import RunnableLambda
 from app.core.config import settings
+from app.core.exceptions import StorageError
 
 s3 = boto3.client("s3", 
     region_name=settings.AWS_REGION,
@@ -12,27 +13,31 @@ s3 = boto3.client("s3",
 BUCKET_NAME = settings.S3_BUCKET_NAME
 
 def upload_video(file_data: dict):
-    video_id = str(uuid.uuid4())
-    ext = file_data["video_path"].split(".")[-1]
 
-    object_key = f"videos/{file_data['user_id']}/{video_id}.{ext}"
+    try:
+        video_id = str(uuid.uuid4())
+        ext = file_data["video_path"].split(".")[-1]
 
-    s3.upload_file(
-        file_data["video_path"],
-        BUCKET_NAME,
-        object_key,
-        ExtraArgs={
-            "ContentType": "video/mp4"
+        object_key = f"videos/{file_data['user_id']}/{video_id}.{ext}"
+
+        s3.upload_file(
+            file_data["video_path"],
+            BUCKET_NAME,
+            object_key,
+            ExtraArgs={
+                "ContentType": "video/mp4"
+            }
+        )
+
+        print(f"Video {video_id} Uploaded to bucket")
+        return {
+            "video_id": video_id,
+            "bucket": BUCKET_NAME,
+            "key": object_key,
+            "s3_uri": f"s3://{BUCKET_NAME}/{object_key}"
         }
-    )
-
-    print(f"Video {video_id} Uploaded to bucket")
-    return {
-        "video_id": video_id,
-        "bucket": BUCKET_NAME,
-        "key": object_key,
-        "s3_uri": f"s3://{BUCKET_NAME}/{object_key}"
-    }
+    except Exception as e:
+        raise StorageError(f"Failed to upload to S3: {str(e)}")
 
 upload_to_bucket=RunnableLambda(upload_video)
 

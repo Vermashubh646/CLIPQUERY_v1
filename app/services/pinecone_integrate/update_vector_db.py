@@ -1,4 +1,5 @@
 from .pincone_initialize import vector_store,pc
+from app.core.exceptions import VectorDBError
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnableLambda
 from uuid import uuid4
@@ -26,21 +27,25 @@ def raw_data_to_documents(raw_data):
     return documents, uuids
 
 def pinecone_sink(output):
-    raw_data = output["processed_json"]["raw_data"]
+    try:
 
-    documents, ids = raw_data_to_documents(raw_data)
+        raw_data = output["processed_json"]["raw_data"]
 
-    print("converted required text into langchain documents")
+        documents, ids = raw_data_to_documents(raw_data)
 
-    vector_store.add_documents(
-        documents=documents,
-        ids=ids
-    )
+        print("converted required text into langchain documents")
+        vector_store.add_documents(
+            documents=documents,
+            ids=ids
+        )
+        
+        print("Documents added to vector db successfully")
+        return output  
     
-    print("Documents added to vector db successfully")
+    except Exception as e:
 
-    return output  
-
+        raise VectorDBError(f"Failed to upload to Pinecone: {str(e)}")
+    
 add_to_pinecone=RunnableLambda(pinecone_sink)
 
 def delete_indexes():
