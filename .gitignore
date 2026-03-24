@@ -4,6 +4,7 @@ Videos/
 Outputs/
 
 __pycache__/
+.pytest_cache/
 
 Structure.txt
 
