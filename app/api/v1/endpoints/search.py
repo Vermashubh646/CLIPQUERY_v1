@@ -6,7 +6,7 @@ router = APIRouter()
 
 @router.post('/query', response_model=SearchResponse)
 async def query_db(search_query: SearchQuery):
-    docs = await query_from_retriever(search_query.query)
+    docs = await query_from_retriever(search_query.query, search_query.user_id, search_query.max_results)
     results = [
         ClipResult(
             video_name=doc.metadata.get("video_name", ""),

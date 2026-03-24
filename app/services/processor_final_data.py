@@ -66,7 +66,9 @@ def update_json(updated_video_data):
         clip['clip_narrative'] = summary
         clip["video_id"]= bucket_data["video_id"]        
         clip["bucket"]= bucket_data["bucket"]           
-        clip["key"]=bucket_data["key"] 
+        clip["key"]=bucket_data["key"]
+        clip["public_listing"] = updated_video_data["public_listing"]
+        clip["user_id"] = updated_video_data["user_id"]
     
     # # writing new json
     # base_name=processed_json["output_dir"].split("/")[-1]
@@ -85,6 +87,8 @@ update_json_pipe = RunnableLambda(update_json)
 parallel_combined_pipe=RunnableParallel({
     "processed_json":raw_pipe | json_processing_pipe,
     "bucket_data": upload_to_bucket,
+    "public_listing" : RunnableLambda(lambda x: x['public_listing']),
+    "user_id" : RunnableLambda(lambda x: x['user_id'])
 })
 
 # final combined pipeline

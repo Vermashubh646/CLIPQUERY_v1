@@ -37,6 +37,7 @@ class JobStatusResponse(BaseModel):
 
 class SearchQuery(BaseModel):
     query: Annotated[str, Field(title="Input Query")]
+    user_id: Annotated[str, Field(title="User Id")]
     max_results: Annotated[int, Field(default=5, title="Max Results")]
 
 class ClipResult(BaseModel):

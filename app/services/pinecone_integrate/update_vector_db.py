@@ -14,11 +14,13 @@ def raw_data_to_documents(raw_data):
                 metadata={
                     "video_name": item["video_name"],
                     "video_id": item["video_id"],        
+                    "user_id": item["user_id"],        
                     "bucket": item["bucket"],           
                     "key": item["key"], 
                     "start_time": item["start_time"],
                     "end_time": item["end_time"],
-                    "clip_narrative":item["clip_narrative"]
+                    "clip_narrative":item["clip_narrative"],
+                    "public_listing":item["public_listing"]
                 }
             )
         )
