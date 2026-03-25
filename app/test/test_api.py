@@ -1,7 +1,9 @@
 from app.main import app
 from fastapi.testclient import TestClient
+from app.core.config import settings
 
 client = TestClient(app)
+client.headers.update({"X-API-Key": settings.VALID_API_KEYS})
 
 def test_status_endpoint_not_found():
     """Smoke Test 1: Querying a fake Job ID should correctly return a 404 error."""
@@ -33,3 +35,18 @@ def test_upload_rejects_non_video_file():
     
     assert response.status_code == 400
     assert "Video Format Error" in response.text
+
+
+def test_missing_api_key():
+    """Smoke Test 4: Querying a fake Job ID without api key should correctly return a 401 error."""
+    response = client.get("/api/videos/get_status/fake-job-id-123", headers={"X-API-Key":""})
+    
+    assert response.status_code == 401
+    assert "Missing API Key" in response.text
+
+def test_auth_invalid_key():
+    """Smoke Test 5: Querying a fake Job ID with wrong api key should correctly return a 401 error."""
+    response = client.get("/api/videos/get_status/fake-job-id-123", headers={"X-API-Key":"sdf15df"})
+    
+    assert response.status_code == 401
+    assert "Invalid API Key" in response.text

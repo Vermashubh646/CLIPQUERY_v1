@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     AWS_REGION: str         
     S3_BUCKET_NAME: str
     CORS_ALLOWED_ORIGINS: list[str] = ["*"]
+    VALID_API_KEYS: str = "test-sk-12345"
 
     class Config:
         env_file = ".env"                
