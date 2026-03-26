@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClipQuery — Full Architecture Blueprint</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #6c63ff;
+    --accent2: #ff6b6b;
+    --accent3: #00d4aa;
+    --text: #e8e8f0;
+    --muted: #7070a0;
+    --byok: #f59e0b;
+    --premium: #6c63ff;
+    --mono: 'JetBrains Mono', monospace;
+    --display: 'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.7;
+    padding: 48px 24px;
+  }
+
+  .container { max-width: 960px; margin: 0 auto; }
+
+  /* HEADER */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 32px;
+    margin-bottom: 48px;
+    position: relative;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0;
+    width: 120px; height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+  }
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 3px 10px;
+    margin-bottom: 16px;
+  }
+  h1 {
+    font-family: var(--display);
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+  h1 span { color: var(--accent); }
+  .subtitle { color: var(--muted); font-size: 12px; }
+
+  /* SECTION */
+  section { margin-bottom: 56px; }
+  h2 {
+    font-family: var(--display);
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h2::before {
+    content: '';
+    display: block;
+    width: 4px; height: 20px;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+  h3 {
+    font-family: var(--display);
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--accent3);
+  }
+
+  /* TIER CARDS */
+  .tier-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .tier-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .tier-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .tier-card.byok::after { background: var(--byok); }
+  .tier-card.premium::after { background: var(--premium); }
+  .tier-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .tier-card.byok .tier-label { color: var(--byok); }
+  .tier-card.premium .tier-label { color: var(--premium); }
+  .tier-card h3 {
+    font-family: var(--display);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .tier-card p { color: var(--muted); font-size: 12px; }
+
+  /* CODE BLOCK */
+  .code-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 20px;
+    overflow-x: auto;
+    margin: 12px 0;
+    font-size: 12px;
+    white-space: pre;
+    color: #c8c8e8;
+    line-height: 1.6;
+  }
+  .code-block .k { color: var(--accent); }
+  .code-block .s { color: var(--accent3); }
+  .code-block .c { color: var(--muted); }
+  .code-block .byok-c { color: var(--byok); }
+  .code-block .premium-c { color: var(--premium); }
+
+  /* TABLE */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin: 12px 0;
+  }
+  th {
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--surface2);
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.6;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface); }
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    margin: 1px;
+  }
+  .badge.byok { background: rgba(245,158,11,0.15); color: var(--byok); }
+  .badge.premium { background: rgba(108,99,255,0.15); color: var(--premium); }
+  .badge.both { background: rgba(0,212,170,0.15); color: var(--accent3); }
+  .badge.new { background: rgba(255,107,107,0.15); color: var(--accent2); }
+
+  /* FLOW DIAGRAM */
+  .flow {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+    margin: 12px 0;
+  }
+  .flow-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+    flex-wrap: wrap;
+  }
+  .flow-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .flow-box.byok-box { border-color: var(--byok); color: var(--byok); }
+  .flow-box.premium-box { border-color: var(--premium); color: var(--premium); }
+  .flow-box.shared { border-color: var(--accent3); color: var(--accent3); }
+  .flow-arrow { color: var(--muted); font-size: 16px; }
+  .flow-split { color: var(--accent2); font-size: 11px; font-weight: 700; margin: 8px 0 4px; }
+
+  /* CALLOUT */
+  .callout {
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    background: rgba(255,107,107,0.05);
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 12px;
+  }
+  .callout strong { color: var(--accent2); }
+  .callout.info { border-left-color: var(--accent3); background: rgba(0,212,170,0.05); }
+  .callout.info strong { color: var(--accent3); }
+
+  /* PHASE ROADMAP */
+  .phases { display: flex; flex-direction: column; gap: 0; }
+  .phase {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-bottom: none;
+  }
+  .phase:last-child { border-bottom: 1px solid var(--border); }
+  .phase-label {
+    padding: 16px;
+    background: var(--surface2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .phase-num {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .phase-name {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .phase-items {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .phase-item {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .phase-item::before { content: '→'; color: var(--accent); flex-shrink: 0; }
+
+  /* DIVIDER */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 32px 0;
+  }
+
+  @media (max-width: 640px) {
+    .tier-grid { grid-template-columns: 1fr; }
+    h1 { font-size: 26px; }
+    .phase { grid-template-columns: 1fr; }
+    .phase-label { border-right: none; border-bottom: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="tag">Architecture Blueprint</div>
+    <h1>Clip<span>Query</span> — Full Product Model</h1>
+    <p class="subtitle">Two-tier commercial architecture · Built on current v1 codebase · Reference for future implementation</p>
+  </div>
+
+  <!-- SECTION 1: THE TWO TIERS -->
+  <section>
+    <h2>The Two-Tier Model</h2>
+    <div class="tier-grid">
+      <div class="tier-card byok">
+        <div class="tier-label">Tier 1</div>
+        <h3>BYOK — Pipeline Access</h3>
+        <p>You are a pure compute layer. User brings all their own API keys (Groq, HuggingFace, Pinecone). You run the pipeline, push vectors to their Pinecone, return confirmation. Zero data ownership on your side. Billed per second of video processed. You only store: their API key (hashed) + usage seconds.</p>
+      </div>
+      <div class="tier-card premium">
+        <div class="tier-label">Tier 2</div>
+        <h3>Premium — Managed Platform</h3>
+        <p>You are the platform. User logs in, uploads video, searches your shared index. You own the Pinecone DB, S3, all API keys. User-scoped data isolation via metadata filters. Billed via subscription. Full YouTube-like UX: upload, search, browse public library.</p>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <strong>Key insight:</strong> Both tiers share the same core pipeline code (your existing <code>services/</code> modules). What changes is only the <strong>key source</strong> (user's vs yours), the <strong>storage destination</strong> (their Pinecone vs yours), and the <strong>auth mechanism</strong> (API key vs JWT session).
+    </div>
+  </section>
+
+  <!-- SECTION 2: REQUEST FLOW -->
+  <section>
+    <h2>Request Flow — How Auth Splits the Tiers</h2>
+
+    <div class="flow">
+      <div class="flow-row">
+        <div class="flow-box">Incoming Request</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Auth Middleware</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Header Inspector</div>
+      </div>
+      <hr style="border-color: #2a2a3a; margin: 16px 0;">
+      <div class="flow-split">IF X-API-Key header present → BYOK path</div>
+      <div class="flow-row">
+        <div class="flow-box byok-box">Validate API Key (DB lookup)</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box byok-box">Extract user keys from request body</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box byok-box">Run pipeline with user keys</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box byok-box">Push to user's Pinecone</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box byok-box">Increment usage_seconds</div>
+      </div>
+      <div class="flow-split">IF Authorization: Bearer JWT present → Premium path</div>
+      <div class="flow-row">
+        <div class="flow-box premium-box">Validate JWT token</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box premium-box">Extract user_id from token</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box premium-box">Run pipeline with master keys</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box premium-box">Push to master Pinecone (user_id scoped)</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box premium-box">Store video metadata in DB</div>
+      </div>
+      <div class="flow-split">Neither → 401</div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: DATABASE SCHEMA -->
+  <section>
+    <h2>Database Schema</h2>
+    <p style="color: var(--muted); margin-bottom: 20px; font-size: 12px;">Postgres for structured data · Pinecone for vectors · S3 for files</p>
+
+    <h3>BYOK Tables</h3>
+    <div class="code-block"><span class="c">-- Who has access to the pipeline</span>
+<span class="k">CREATE TABLE</span> byok_api_keys (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  api_key_hash  TEXT NOT NULL UNIQUE,      <span class="c">-- store hashed, never raw</span>
+  owner_email   TEXT NOT NULL,
+  plan          TEXT DEFAULT <span class="s">'free'</span>,          <span class="c">-- free | starter | pro</span>
+  credit_seconds INT DEFAULT 0,             <span class="c">-- prepaid seconds remaining</span>
+  created_at    TIMESTAMPTZ DEFAULT now(),
+  is_active     BOOLEAN DEFAULT true
+);
+
+<span class="c">-- Per-request usage audit log</span>
+<span class="k">CREATE TABLE</span> byok_usage_log (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  api_key_id    UUID REFERENCES byok_api_keys(id),
+  video_name    TEXT,
+  duration_sec  INT NOT NULL,               <span class="c">-- extracted via ffprobe BEFORE pipeline</span>
+  processed_at  TIMESTAMPTZ DEFAULT now(),
+  status        TEXT DEFAULT <span class="s">'success'</span>     <span class="c">-- success | failed | refunded</span>
+);</div>
+
+    <h3 style="margin-top: 24px;">Premium Tables</h3>
+    <div class="code-block"><span class="c">-- Platform users (sign up via email/OAuth)</span>
+<span class="k">CREATE TABLE</span> users (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email         TEXT NOT NULL UNIQUE,
+  password_hash TEXT,                       <span class="c">-- null if OAuth login</span>
+  oauth_provider TEXT,                      <span class="c">-- google | github | null</span>
+  plan          TEXT DEFAULT <span class="s">'free'</span>,          <span class="c">-- free | premium</span>
+  created_at    TIMESTAMPTZ DEFAULT now(),
+  is_active     BOOLEAN DEFAULT true
+);
+
+<span class="c">-- Uploaded video metadata (Pinecone holds vectors, this holds metadata)</span>
+<span class="k">CREATE TABLE</span> videos (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       UUID REFERENCES users(id),
+  title         TEXT NOT NULL,
+  s3_key        TEXT NOT NULL,              <span class="c">-- path in your S3 bucket</span>
+  duration_sec  INT NOT NULL,
+  status        TEXT DEFAULT <span class="s">'processing'</span>, <span class="c">-- processing | ready | failed</span>
+  is_public     BOOLEAN DEFAULT false,      <span class="c">-- for public library browsing</span>
+  pinecone_namespace TEXT,                  <span class="c">-- namespace in master index</span>
+  uploaded_at   TIMESTAMPTZ DEFAULT now()
+);</div>
+
+    <div class="callout">
+      <strong>Critical:</strong> BYOK requests are <em>stateless</em> — you never store the user's Groq/HuggingFace/Pinecone keys in your DB. They come in on the request body and are discarded after the pipeline completes. You only store the audit log above for billing.
+    </div>
+  </section>
+
+  <!-- SECTION 4: API ROUTES -->
+  <section>
+    <h2>API Route Structure</h2>
+
+    <table>
+      <tr>
+        <th>Method</th>
+        <th>Endpoint</th>
+        <th>Tier</th>
+        <th>Notes</th>
+      </tr>
+      <!-- AUTH -->
+      <tr><td colspan="4" style="background: var(--surface2); color: var(--muted); font-size: 10px; letter-spacing: 1px; text-transform: uppercase;">Authentication</td></tr>
+      <tr>
+        <td>POST</td>
+        <td><code>/auth/register</code></td>
+        <td><span class="badge premium">Premium</span></td>
+        <td>Email + password signup. Returns JWT.</td>
+      </tr>
+      <tr>
+        <td>POST</td>
+        <td><code>/auth/login</code></td>
+        <td><span class="badge premium">Premium</span></td>
+        <td>Returns access token + refresh token.</td>
+      </tr>
+      <tr>
+        <td>POST</td>
+        <td><code>/auth/refresh</code></td>
+        <td><span class="badge premium">Premium</span></td>
+        <td>Rotate JWT using refresh token.</td>
+      </tr>
+      <tr>
+        <td>POST</td>
+        <td><code>/byok/keys/register</code></td>
+        <td><span class="badge byok">BYOK</span></td>
+        <td>Developer signs up, gets their ClipQuery API key.</td>
+      </tr>
+      <!-- VIDEOS -->
+      <tr><td colspan="4" style="background: var(--surface2); color: var(--muted); font-size: 10px; letter-spacing: 1px; text-transform: uppercase;">Video Operations</td></tr>
+      <tr>
+        <td>POST</td>
+        <td><code>/api/v1/videos/upload</code></td>
+        <td><span class="badge both">Both</span></td>
+        <td>BYOK: user keys in body. Premium: uses master keys. Returns <code>job_id</code> immediately.</td>
+      </tr>
+      <tr>
+        <td>GET</td>
+        <td><code>/api/v1/videos/status/{job_id}</code></td>
+        <td><span class="badge both">Both</span></td>
+        <td>Poll for processing status. <strong>Already built.</strong></td>
+      </tr>
+      <tr>
+        <td>GET</td>
+        <td><code>/api/v1/videos/</code></td>
+        <td><span class="badge premium">Premium</span> <span class="badge new">New</span></td>
+        <td>List current user's videos. Paginated.</td>
+      </tr>
+      <tr>
+        <td>GET</td>
+        <td><code>/api/v1/videos/{id}</code></td>
+        <td><span class="badge premium">Premium</span> <span class="badge new">New</span></td>
+        <td>Single video metadata + pre-signed S3 URL.</td>
+      </tr>
+      <tr>
+        <td>DELETE</td>
+        <td><code>/api/v1/videos/{id}</code></td>
+        <td><span class="badge premium">Premium</span> <span class="badge new">New</span></td>
+        <td>Delete from S3 + Pinecone + DB atomically.</td>
+      </tr>
+      <!-- SEARCH -->
+      <tr><td colspan="4" style="background: var(--surface2); color: var(--muted); font-size: 10px; letter-spacing: 1px; text-transform: uppercase;">Search</td></tr>
+      <tr>
+        <td>GET</td>
+        <td><code>/api/v1/search/query</code></td>
+        <td><span class="badge both">Both</span></td>
+        <td>BYOK: searches user's Pinecone index. Premium: searches master index scoped by user_id. <strong>Already built for Premium path.</strong></td>
+      </tr>
+      <tr>
+        <td>GET</td>
+        <td><code>/api/v1/search/public</code></td>
+        <td><span class="badge premium">Premium</span> <span class="badge new">New</span></td>
+        <td>Searches only public videos. No auth required.</td>
+      </tr>
+      <!-- BILLING -->
+      <tr><td colspan="4" style="background: var(--surface2); color: var(--muted); font-size: 10px; letter-spacing: 1px; text-transform: uppercase;">Billing (BYOK)</td></tr>
+      <tr>
+        <td>GET</td>
+        <td><code>/byok/usage</code></td>
+        <td><span class="badge byok">BYOK</span> <span class="badge new">New</span></td>
+        <td>Returns credit_seconds remaining + usage log.</td>
+      </tr>
+      <tr>
+        <td>POST</td>
+        <td><code>/byok/credits/topup</code></td>
+        <td><span class="badge byok">BYOK</span> <span class="badge new">New</span></td>
+        <td>Stripe webhook handler — adds credits after payment.</td>
+      </tr>
+    </table>
+  </section>
+
+  <!-- SECTION 5: BYOK REQUEST BODY -->
+  <section>
+    <h2>BYOK Upload Request — Exact Shape</h2>
+    <p style="color: var(--muted); margin-bottom: 14px; font-size: 12px;">This is what a developer's product sends to your API:</p>
+    <div class="code-block"><span class="c">Headers:</span>
+  X-API-Key: <span class="byok-c">cq_live_xxxxxxxxxxxxxxxxxxxx</span>   <span class="c">← your issued key</span>
+  Content-Type: multipart/form-data
+
+<span class="c">Form Body:</span>
+  video_file:         &lt;binary&gt;
+  groq_api_key:       <span class="byok-c">gsk_xxxxxxxxxxxxxxxxxxxx</span>
+  hf_token:           <span class="byok-c">hf_xxxxxxxxxxxxxxxxxxxx</span>
+  pinecone_api_key:   <span class="byok-c">xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</span>
+  pinecone_index:     <span class="byok-c">their-index-name</span>
+  namespace:          <span class="byok-c">optional-namespace</span>
+
+<span class="c">Your pipeline does:</span>
+  1. ffprobe → extract duration_sec
+  2. Check credit_seconds >= duration_sec    <span class="c">← gate here, fail fast</span>
+  3. Run pipeline with their keys
+  4. Push vectors to THEIR Pinecone
+  5. Deduct duration_sec from credit_seconds
+  6. Insert row into byok_usage_log
+  7. Return { job_id, duration_sec, credits_remaining }</div>
+  </section>
+
+  <!-- SECTION 6: WHAT CHANGES IN CODEBASE -->
+  <section>
+    <h2>What Changes in Your Existing Codebase</h2>
+
+    <table>
+      <tr>
+        <th>File / Module</th>
+        <th>Current State</th>
+        <th>What to Add for BYOK</th>
+      </tr>
+      <tr>
+        <td><code>core/config.py</code></td>
+        <td>Loads master API keys from env</td>
+        <td>No change — master keys stay here. BYOK keys come from request, not config.</td>
+      </tr>
+      <tr>
+        <td><code>core/auth.py</code></td>
+        <td>Single APIKeyHeader dependency</td>
+        <td>Add a second dependency: <code>get_jwt_user()</code> for premium. Router decides which to use per endpoint.</td>
+      </tr>
+      <tr>
+        <td><code>services/pinecone_integrate/</code></td>
+        <td>Hardcoded to master Pinecone keys</td>
+        <td>Refactor <code>pincone_initialize.py</code> to accept optional key override. BYOK passes user key; Premium passes None (uses config).</td>
+      </tr>
+      <tr>
+        <td><code>services/orchestrate_pipeline_db.py</code></td>
+        <td>Uses config keys implicitly</td>
+        <td>Accept a <code>KeyContext</code> dataclass (groq_key, hf_token, pinecone_key, index_name). Thread it through the pipeline instead of reading from config directly.</td>
+      </tr>
+      <tr>
+        <td><code>api/v1/endpoints/ingest.py</code></td>
+        <td>Single upload endpoint, Premium only</td>
+        <td>Add tier detection: if request has BYOK key → extract user keys from form → build KeyContext → pass to pipeline.</td>
+      </tr>
+      <tr>
+        <td><code>schemas/</code></td>
+        <td>Premium-only schemas</td>
+        <td>Add <code>BYOKUploadRequest</code> (includes key fields). Add <code>BYOKUsageResponse</code>.</td>
+      </tr>
+      <tr>
+        <td><code>main.py</code></td>
+        <td>Single router</td>
+        <td>Mount a second router prefix: <code>/byok</code> for BYOK-only endpoints alongside existing <code>/api/v1</code>.</td>
+      </tr>
+    </table>
+
+    <div class="callout info">
+      <strong>The pipeline itself doesn't change.</strong> Your <code>processor_raw.py</code>, <code>processor_final_data.py</code>, all audio/visual services — they remain identical. You're only changing <em>which keys</em> get injected into them. This is clean separation of concerns.
+    </div>
+  </section>
+
+  <!-- SECTION 7: PINECONE STRATEGY -->
+  <section>
+    <h2>Pinecone Strategy — BYOK vs Premium</h2>
+    <table>
+      <tr>
+        <th>Aspect</th>
+        <th><span style="color: var(--byok);">BYOK</span></th>
+        <th><span style="color: var(--premium);">Premium</span></th>
+      </tr>
+      <tr>
+        <td>Index Owner</td>
+        <td>User owns it — their account, their billing</td>
+        <td>You own it — master index on your account</td>
+      </tr>
+      <tr>
+        <td>Isolation</td>
+        <td>Complete — different Pinecone account entirely</td>
+        <td>Namespace per user_id within your master index</td>
+      </tr>
+      <tr>
+        <td>You pay for it?</td>
+        <td>No</td>
+        <td>Yes — factor into Premium pricing</td>
+      </tr>
+      <tr>
+        <td>Multi-tenant filter</td>
+        <td>Not needed — user queries their own index directly</td>
+        <td>Your existing <code>$or</code> filter (user_id + public_listing) — already built</td>
+      </tr>
+    </table>
+
+    <div class="callout">
+      <strong>Future consideration:</strong> For Premium, use <strong>Pinecone namespaces</strong> (<code>namespace=user_id</code>) instead of metadata filters for isolation. Namespaces are index-level partitions — faster and cheaper than metadata-filtered scans at scale. Your current <code>$or</code> filter works fine for now, migrate later when user count grows.
+    </div>
+  </section>
+
+  <!-- SECTION 8: BILLING MODEL -->
+  <section>
+    <h2>Billing Model</h2>
+
+    <div class="tier-grid">
+      <div class="tier-card byok">
+        <div class="tier-label">BYOK Billing</div>
+        <h3>Prepaid Credits</h3>
+        <p style="margin-bottom: 12px;">User buys X minutes upfront via Stripe. Pipeline runs only if credit balance ≥ video duration. No credit → 402 Payment Required, pipeline never starts.</p>
+        <p><strong style="color: var(--byok);">Suggested pricing:</strong><br>₹5 / minute processed<br>Starter: 60 min = ₹300<br>Pro: 600 min = ₹2500</p>
+      </div>
+      <div class="tier-card premium">
+        <div class="tier-label">Premium Billing</div>
+        <h3>Monthly Subscription</h3>
+        <p style="margin-bottom: 12px;">Monthly flat fee via Stripe Subscriptions. Free tier: 10 videos/month. Premium: unlimited. Platform manages all costs internally.</p>
+        <p><strong style="color: var(--premium);">Suggested pricing:</strong><br>Free: 10 videos/month<br>Premium: ₹199/month</p>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <strong>Stripe integration point:</strong> One webhook handler endpoint (<code>POST /webhooks/stripe</code>) handles both: credit top-ups for BYOK and subscription activations for Premium. This is a single future addition, not needed until you monetize.
+    </div>
+  </section>
+
+  <!-- SECTION 9: DEPLOYMENT -->
+  <section>
+    <h2>Deployment Architecture</h2>
+    <div class="flow">
+      <div class="flow-row">
+        <div class="flow-box premium-box">React Frontend (Vercel)</div>
+        <span class="flow-arrow">HTTPS →</span>
+        <div class="flow-box shared">Nginx (EC2 t2.micro)</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box shared">FastAPI (uvicorn :8000)</div>
+      </div>
+      <div style="margin: 16px 0 8px; color: var(--muted); font-size: 11px;">FastAPI talks to:</div>
+      <div class="flow-row" style="flex-wrap: wrap; gap: 12px;">
+        <div class="flow-box premium-box">Pinecone (master index)</div>
+        <div class="flow-box premium-box">AWS S3 (master bucket)</div>
+        <div class="flow-box byok-box">User's Pinecone (BYOK only)</div>
+        <div class="flow-box shared">Groq API</div>
+        <div class="flow-box shared">HuggingFace API</div>
+        <div class="flow-box shared">Postgres (RDS or EC2-local)</div>
+      </div>
+      <div style="margin-top: 16px; color: var(--muted); font-size: 11px;">
+        SSL: Let's Encrypt via Certbot on Nginx · Domain: GitHub Student Pack (.me domain, free 1yr)
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 10: IMPLEMENTATION PHASES -->
+  <section>
+    <h2>Implementation Phases — When to Build What</h2>
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-label">
+          <div class="phase-num">Phase 0</div>
+          <div class="phase-name" style="color: var(--accent3);">Now (Current)</div>
+        </div>
+        <div class="phase-items">
+          <div class="phase-item">Finish logging (loguru + request IDs)</div>
+          <div class="phase-item">Complete config.py with all env vars</div>
+          <div class="phase-item">Finalize requirements.txt + Dockerfile</div>
+          <div class="phase-item">Deploy Premium-only API to EC2 (your current codebase)</div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-label">
+          <div class="phase-num">Phase 1</div>
+          <div class="phase-name">BYOK Scaffold</div>
+        </div>
+        <div class="phase-items">
+          <div class="phase-item">Refactor pipeline to accept KeyContext (the big architectural change)</div>
+          <div class="phase-item">Add Postgres + byok_api_keys + byok_usage_log tables</div>
+          <div class="phase-item">Build /byok router with key registration + usage endpoints</div>
+          <div class="phase-item">Add ffprobe duration check + credit gate in ingest.py</div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-label">
+          <div class="phase-num">Phase 2</div>
+          <div class="phase-name">Premium Auth</div>
+        </div>
+        <div class="phase-items">
+          <div class="phase-item">Add /auth routes (register, login, refresh) with JWT</div>
+          <div class="phase-item">Add users + videos tables to Postgres</div>
+          <div class="phase-item">Build video CRUD endpoints (list, get, delete)</div>
+          <div class="phase-item">Add pre-signed S3 URL generation for playback</div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-label">
+          <div class="phase-num">Phase 3</div>
+          <div class="phase-name">Frontend</div>
+        </div>
+        <div class="phase-items">
+          <div class="phase-item">React app: login, upload, search, video library</div>
+          <div class="phase-item">Developer docs page for BYOK (static, GitHub Pages is fine)</div>
+          <div class="phase-item">Deploy frontend to Vercel</div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-label">
+          <div class="phase-num">Phase 4</div>
+          <div class="phase-name">Monetization</div>
+        </div>
+        <div class="phase-items">
+          <div class="phase-item">Stripe integration for BYOK credits + Premium subscriptions</div>
+          <div class="phase-item">Webhook handler for payment events</div>
+          <div class="phase-item">Usage dashboard for BYOK developers</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div style="border-top: 1px solid var(--border); margin-top: 48px; padding-top: 24px; color: var(--muted); font-size: 11px; text-align: center;">
+    ClipQuery Architecture Blueprint · Generated March 2026 · Reference only — build Phase 0 first
+  </div>
+
+</div>
+</body>
+</html>

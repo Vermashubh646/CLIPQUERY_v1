@@ -3,13 +3,9 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda
 from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
+
 from app.core.config import settings
-
-
-# from dotenv import load_dotenv
-# load_dotenv('../../../.env')
-
-# model = ChatGroq(model="llama-3.3-70b-versatile",api_key=settings.GROQ_API_KEY.get_secret_value())
+from app.core.logger import custom_logger
 
 llm=HuggingFaceEndpoint(
     repo_id="deepseek-ai/DeepSeek-V3.1",
@@ -66,17 +62,6 @@ prompt_summarizer = PromptTemplate(
 
 parser = StrOutputParser()
 
-def print_out(text):
-    print(text)
-    return text
-
-print_output=RunnableLambda(print_out)
-
-summarizer_pipe = prompt_summarizer | model | parser |print_output
 
 
-# print(summarize_pipe.invoke({
-# 'global_context':"",
-# 'audio_log':"",
-# 'visual_log':""
-# }))
+summarizer_pipe = prompt_summarizer | model | parser

@@ -1,6 +1,7 @@
 import subprocess
 import sys
 
+from app.core.logger import custom_logger
 
 def get_video_duration(video_path):
     """Get the duration of the video in seconds using ffprobe."""
@@ -15,7 +16,7 @@ def get_video_duration(video_path):
         result = subprocess.run(command, capture_output=True, text=True, check=True)
         return float(result.stdout.strip())
     except Exception as e:
-        print(f"Could not determine duration: {e}", file=sys.stderr)
+        custom_logger.error(f"Could not determine duration: {e}")
         return None
 
 
@@ -42,6 +43,6 @@ def cut_video_clip(input_path: str, start_time: float, end_time: float, output_p
         subprocess.run(command, check=True, capture_output=True)
         return output_path
     except subprocess.CalledProcessError as e:
-        print(f"Clip Error: {e.stderr.decode('utf-8')}", file=sys.stderr)
+        custom_logger.error(f"Clip Error: {e.stderr.decode('utf-8')}")
         
         raise e

@@ -1,6 +1,7 @@
 from app.services.orchestrate_pipeline_db import add_video
 from app.schemas.models import VideoUploadResponse, JobStatusResponse
-from app.core.exceptions import ProcessingError, VideoFormatError
+from app.core.exceptions import VideoFormatError
+from app.core.logger import custom_logger
 
 from fastapi import APIRouter, UploadFile, File, BackgroundTasks, HTTPException
 from uuid import uuid4
@@ -42,13 +43,15 @@ def run_pipeline(job_id: str, temp_path: str, temp_out_path: str, user_id: str, 
         }
 
     except Exception as e:
-        print(str(e))
+
         jobs[job_id] = {
             "status": "failed",
             "video_id": None,
             "message": f"Processing failed: {str(e)}"
         }
-        raise ProcessingError(f"Pipeline failed: {str(e)}")
+
+        custom_logger.error(f"Pipeline crashed for job {job_id}", exc_info=True)
+
 
     finally:
         # Cleanup temp files

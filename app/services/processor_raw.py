@@ -1,20 +1,20 @@
-from .video_pipeline.video_clip_extractor import get_video_duration,cut_video_clip
-from .video_pipeline.frame_extractor import extract_frame_at_time,frame_to_base64
-from .video_pipeline.scene_detect import get_scene_keyframes
-from .audio_pipeline.extractor import extract_audio_from_video
-from .audio_pipeline.transcriber import transcribe_audio
-from .frame_inference.frame_captioning import caption_frames
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 import shutil
-# import json
 import time
 import os
+# import json
+
+from app.services.video_pipeline.video_clip_extractor import get_video_duration,cut_video_clip
+from app.services.video_pipeline.frame_extractor import extract_frame_at_time,frame_to_base64
+from app.services.video_pipeline.scene_detect import get_scene_keyframes
+from app.services.audio_pipeline.extractor import extract_audio_from_video
+from app.services.audio_pipeline.transcriber import transcribe_audio
+from app.services.frame_inference.frame_captioning import caption_frames
+from app.core.logger import custom_logger
 
 caption_executor = ThreadPoolExecutor(max_workers=5)
 
-# The leading . means:
-# from the same package (services)
 
 def caption_frame_from_video(clipped_video_path, time_stamp, output_path_frame,start):
 
@@ -27,7 +27,7 @@ def caption_frame_from_video(clipped_video_path, time_stamp, output_path_frame,s
     del frame
     del base64_image
 
-    print('\n',caption,'\n')
+    # print('\n',caption,'\n')
 
     return {
         'time_stamp':time_stamp+start,
@@ -40,20 +40,20 @@ def process_clip(needs_cut,video_path,current_clip_path,frames_dir,audio_path,st
     # clip video if needed
     if needs_cut:
         cut_video_clip(video_path,start_time=start,end_time=end,output_path=current_clip_path)
-        print(f'File clipped successfully at {current_clip_path}')
+        custom_logger.info(f'File clipped successfully at {current_clip_path}')
 
     # extract keyframes
     keyframes=get_scene_keyframes(current_clip_path)
 
     if len(keyframes)>3:
-        print(f'Sufficient keyframes acquired successfully on the basis of pyscene detection from clip....')
+        custom_logger.info(f'Sufficient keyframes acquired successfully on the basis of pyscene detection from clip....')
     else:
         keyframes=[]
         for i in range(1,int(end)-start,5):
             keyframes.append(i)
-        print(f'Extra keyframes acquired successfully on the basis of equal splitting of clip....')
+        custom_logger.info(f'Extra keyframes acquired successfully on the basis of equal splitting of clip....')
     
-    print("PysceneDetect detected scenes at ",keyframes)
+    custom_logger.info("PysceneDetect detected scenes at ",keyframes)
 
     
     # Submit captioning tasks for each keyframe.
@@ -79,7 +79,7 @@ def process_clip(needs_cut,video_path,current_clip_path,frames_dir,audio_path,st
     visuals_captions=[]
     for future in as_completed(futures):
         visuals_captions.append(future.result())
-    print("All captions done for this clip")
+    custom_logger.info("All captions done for this clip")
 
 
     #extract audio file from clip 
@@ -102,7 +102,8 @@ def process_clip(needs_cut,video_path,current_clip_path,frames_dir,audio_path,st
             path.unlink()
         elif path.is_dir():
             shutil.rmtree(path)
-    print("Deleted Frames, audio and video clip....")
+            
+    custom_logger.info("Clip is raw processed \n Deleted Frames, audio and video clip....")
 
     return visuals_captions, audio_segments, audio_transcription.text
 
@@ -126,7 +127,7 @@ def cut_extract_transcript(video_path, output_dir):
     STRIDE = 30
     TAIL_BUFFER = 15 
 
-    print(f"duration is {duration}")
+    custom_logger.info(f"duration is {duration}")
 
     final_struct=[]
     complete_transcript=""
@@ -145,13 +146,13 @@ def cut_extract_transcript(video_path, output_dir):
             
         else:
             current_clip_path = video_path 
-            print(f'Usint original video completely at {current_clip_path}')
+            custom_logger.info(f'Usint original video completely at {current_clip_path}')
 
         # creating frames directory
         frames_dir=os.path.splitext(current_clip_path)[0]+'/'
         if not os.path.exists(frames_dir):
             os.mkdir(frames_dir)
-        print(f"Storing clip frames at {frames_dir}")
+        custom_logger.info(f"Storing clip frames at {frames_dir}")
 
         # definig path of audio file
         audio_path = os.path.join(output_dir,f"{base_name}_{start}_{end}.mp3")
@@ -187,9 +188,9 @@ def cut_extract_transcript(video_path, output_dir):
             break
 
         # in order to not to hit api limit
-        print("Waiting 35sec to prevent api limit hitting....")
+        custom_logger.info("Waiting 35sec to prevent api limit hitting....")
         time.sleep(35)
-    print("Raw data extraction process over....")
+    custom_logger.info("Raw data extraction process over....")
 
     #  deletes the folder itself (to uncomment when to push onto server)
     if Path(output_dir).is_dir():

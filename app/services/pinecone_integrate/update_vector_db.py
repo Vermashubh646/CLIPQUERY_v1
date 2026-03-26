@@ -1,8 +1,10 @@
-from .pincone_initialize import vector_store,pc
-from app.core.exceptions import VectorDBError
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnableLambda
 from uuid import uuid4
+
+from app.services.pinecone_integrate.pincone_initialize import vector_store,pc
+from app.core.exceptions import VectorDBError
+from app.core.logger import custom_logger
 
 def raw_data_to_documents(raw_data):
     documents = []
@@ -35,13 +37,13 @@ def pinecone_sink(output):
 
         documents, ids = raw_data_to_documents(raw_data)
 
-        print("converted required text into langchain documents")
+        custom_logger.info("converted required text into langchain documents")
         vector_store.add_documents(
             documents=documents,
             ids=ids
         )
         
-        print("Documents added to vector db successfully")
+        custom_logger.info("Documents added to vector db successfully")
         return output  
     
     except Exception as e:

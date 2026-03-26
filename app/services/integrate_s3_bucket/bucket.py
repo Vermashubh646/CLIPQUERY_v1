@@ -1,6 +1,8 @@
 import boto3
 import uuid
 from langchain_core.runnables import RunnableLambda
+
+from app.core.logger import custom_logger
 from app.core.config import settings
 from app.core.exceptions import StorageError
 
@@ -29,7 +31,7 @@ def upload_video(file_data: dict):
             }
         )
 
-        print(f"Video {video_id} Uploaded to bucket")
+        custom_logger.info(f"Video {video_id} Uploaded to bucket")
         return {
             "video_id": video_id,
             "bucket": BUCKET_NAME,
@@ -46,7 +48,7 @@ def delete_video(file_data: dict):
         Bucket=file_data["bucket"],
         Key=file_data['key']
     )
-    print(f"Video {file_data['key']} deleted")
+    custom_logger.info(f"Video {file_data['key']} deleted")
 
     return file_data
 

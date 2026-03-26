@@ -1,11 +1,8 @@
 from langchain_groq import ChatGroq
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from app.core.config import settings
-import os
 
-# from dotenv import load_dotenv
-# load_dotenv('../../../.env')
+from app.core.config import settings
 
 model = ChatGroq(
     model="llama-3.3-70b-versatile",api_key=settings.GROQ_API_KEY)
@@ -25,6 +22,3 @@ parser = StrOutputParser()
 
 global_context_pipe = prompt_global_context | model | parser
 
-
-# insider=input("What is the transcript?\n")
-# print('\n\n',global_context_pipe.invoke({"transcript":insider}))

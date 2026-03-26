@@ -1,9 +1,11 @@
-from fastapi import FastAPI
+import uuid
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api.v1.router import api_router
-from .core.config import settings
-from .core.handlers import register_exception_handlers
+from app.api.v1.router import api_router
+from app.core.config import settings
+from app.core.logger import custom_logger
+from app.core.handlers import register_exception_handlers
 
 
 app = FastAPI(title="ClipQuery Backend")
@@ -20,21 +22,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware('http')
+async def log_requests(request: Request, call_next):
+    request_id = uuid.uuid4().hex
+
+    with custom_logger.contextualize(request_id = request_id):
+        custom_logger.info(f"Incoming Request: {request.method} {request.url.path}")
+        response = await call_next(request)
+        custom_logger.info(f"Outgoing Response: Status {response.status_code}")
+        return response
+
+
 # Attach all routes
 app.include_router(api_router, prefix="/api")
 
 register_exception_handlers(app)
 
-# input_video = "../Videos/"
-# output_path="../Outputs/"
-# file_name="Regeneration in Action ｜ Building Resilient Farms in Iowa ｜ National Geographic.mp4"
-# base_name =os.path.splitext(file_name)[0]
-# out_path=os.path.join(output_path,base_name)
-# USER_ID=56985
-
-# data = add_video.invoke({"video_path":os.path.join(input_video,file_name),"output_dir":out_path,"user_id":USER_ID})
-
-# with open("data.json",'w') as f:
-#     json.dump(data["processed_json"]["raw_data"], f, indent=2)
 
 

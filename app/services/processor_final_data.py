@@ -1,13 +1,11 @@
-from .global_context.global_context_extractor import global_context_pipe
-from .json_serialize.json_serialize import get_logs_runnable
-from .processor_raw import cut_extract_transcript
-from .summarizer_model.llm_summarizer import summarizer_pipe
-from .integrate_s3_bucket.bucket import upload_to_bucket
+from app.services.global_context.global_context_extractor import global_context_pipe
+from app.services.json_serialize.json_serialize import get_logs_runnable
+from app.services.processor_raw import cut_extract_transcript
+from app.services.summarizer_model.llm_summarizer import summarizer_pipe
+from app.services.integrate_s3_bucket.bucket import upload_to_bucket
 
 from langchain_core.runnables import RunnableLambda, RunnableParallel
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import os
-import json
 
 # pipeline function for raw data extraction
 raw_pipe = RunnableLambda(lambda x: cut_extract_transcript(video_path=x["video_path"],output_dir=x['output_dir']))# type: ignore
@@ -32,7 +30,7 @@ def parallel_summarize_clips(parallel_global_context_output):
             **get_logs_runnable.invoke(clip)
         })
 
-    results = [None] * len(raw_data)
+    results :list[str | None] = [None] * len(raw_data)
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
@@ -70,14 +68,6 @@ def update_json(updated_video_data):
         clip["public_listing"] = updated_video_data["public_listing"]
         clip["user_id"] = updated_video_data["user_id"]
     
-    # # writing new json
-    # base_name=processed_json["output_dir"].split("/")[-1]
-    # file_path=os.path.join(processed_json["output_dir"],f"{base_name}_final_updated.json")
-    # with open(file_path,'w') as f:
-    #     json.dump(processed_json["raw_data"], f, indent=2)
-                
-    # print(f"New updated json at {file_path}")
-
     return updated_video_data
 
 # pipeline function for raw data extraction
