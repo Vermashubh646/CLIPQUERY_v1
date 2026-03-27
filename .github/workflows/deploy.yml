@@ -1,0 +1,38 @@
+name: Deploy API to EC2
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout the code from Github
+      - uses: actions/checkout@v3
+
+      # Step 2: Login to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Step 3: Compile the Image and Push to Hub
+      - name: Build and Push Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/clipquery:latest .
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/clipquery:latest
+
+      # Step 4: SSH into EC2 and restart the API
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/clipquery:latest
+            sudo docker stop clipquery-api || true
+            sudo docker rm clipquery-api || true
+            sudo docker run -d --name clipquery-api -p 8000:8000 --env-file /home/ubuntu/.env ${{ secrets.DOCKERHUB_USERNAME }}/clipquery:latest
