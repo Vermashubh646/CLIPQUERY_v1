@@ -22,6 +22,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Human readable
+@app.get('/')
+def home():
+    return {"message": "Welcome to ClipQuery API"}
+
+# Machine readable (for Nginx/Docker to ping)
+@app.get('/health')
+def health_check():
+    return {
+        "status": "healthy",
+        "api_version": "1.0"
+    }
+
+
+
 @app.middleware('http')
 async def log_requests(request: Request, call_next):
     request_id = uuid.uuid4().hex

@@ -1,0 +1,19 @@
+.env
+.venv/
+Videos/
+Outputs/
+
+__pycache__/
+.pytest_cache/
+
+Structure.txt
+
+data.txt
+data.json
+aws secrets.txt
+
+CURRENT_STATUS.md
+MUST_HAVES.txt
+PROJECT_OVERVIEW.md
+clipquery_architecture.html
+PROJECT_LOG.md
