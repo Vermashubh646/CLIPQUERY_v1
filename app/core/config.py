@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     AWS_SECRET_ACCESS_KEY: SecretStr
     AWS_REGION: str         
     S3_BUCKET_NAME: str
+    REDIS_URL: str
     CORS_ALLOWED_ORIGINS: list[str] = ["*"]
     VALID_API_KEYS: str = "test-sk-12345"
 

@@ -1,17 +1,17 @@
 from app.services.orchestrate_pipeline_db import add_video
 from app.schemas.models import VideoUploadResponse, JobStatusResponse
 from app.core.exceptions import VideoFormatError
+from app.tasks.pipeline_task import run_pipeline
 from app.core.logger import custom_logger
 
-from fastapi import APIRouter, UploadFile, File, BackgroundTasks, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException
+from celery.result import AsyncResult
+from celery import states
 from uuid import uuid4
 import shutil
 import os
 
 router = APIRouter()
-
-# replace with DB later
-jobs = {}
 
 def check_size_limit(file: UploadFile):
 
@@ -21,48 +21,10 @@ def check_size_limit(file: UploadFile):
     
     if size > (50*1024*1024):
         raise HTTPException(status_code=413, detail="File size exceeds the 50MB limit.")
-
-
-
-def run_pipeline(job_id: str, temp_path: str, temp_out_path: str, user_id: str, public_listing: bool):
-    """Background task — runs the full video processing pipeline."""
-    try:
-        result = add_video.invoke({
-            "video_path": temp_path,
-            "output_dir": temp_out_path,
-            "user_id": user_id,
-            "public_listing": public_listing
-        })
-
-        video_id = result["bucket_data"]["video_id"]
-
-        jobs[job_id] = {
-            "status": "completed",
-            "video_id": video_id,
-            "message": "Video processed and indexed successfully"
-        }
-
-    except Exception as e:
-
-        jobs[job_id] = {
-            "status": "failed",
-            "video_id": None,
-            "message": f"Processing failed: {str(e)}"
-        }
-
-        custom_logger.error(f"Pipeline crashed for job {job_id}", exc_info=True)
-
-
-    finally:
-        # Cleanup temp files
-        if os.path.isfile(temp_path):
-            os.remove(temp_path)
-        if os.path.isdir(temp_out_path):
-            shutil.rmtree(temp_out_path)
-
+    
 
 @router.post("/upload", response_model=VideoUploadResponse)
-def upload(USER_ID: str,public_listing: bool ,file: UploadFile = File(...), background_tasks: BackgroundTasks = BackgroundTasks()):
+def upload(USER_ID: str,public_listing: bool ,file: UploadFile = File(...)):
 
     check_size_limit(file)
 
@@ -71,11 +33,6 @@ def upload(USER_ID: str,public_listing: bool ,file: UploadFile = File(...), back
 
 
     job_id = str(uuid4())
-    jobs[job_id] = {
-        "status": "processing",
-        "video_id": None,
-        "message": "Video is being processed"
-    }
 
     temp_path = f"/tmp/{file.filename}"
     temp_out_path = f"/tmp/{file.filename}_dir"
@@ -94,8 +51,8 @@ def upload(USER_ID: str,public_listing: bool ,file: UploadFile = File(...), back
         raise HTTPException(status_code=500, detail=f"Failed to save upload: {str(e)}")
 
     # Kick off processing in background — returns immediately
-    background_tasks.add_task(run_pipeline, job_id, temp_path, temp_out_path, USER_ID, public_listing)
-
+    task = run_pipeline.delay(job_id, temp_path, temp_out_path, USER_ID, public_listing)
+    
     return VideoUploadResponse(
         job_id=job_id,
         status="processing",
@@ -106,14 +63,19 @@ def upload(USER_ID: str,public_listing: bool ,file: UploadFile = File(...), back
 @router.get("/get_status/{job_id}", response_model=JobStatusResponse)
 def get_status(job_id: str):
 
-    if job_id not in jobs:
+    task_result = AsyncResult(job_id)
+
+    if task_result.state == states.PENDING and task_result.date_done is None:
         raise HTTPException(status_code=404, detail="Job ID not found")
 
-    job = jobs[job_id]
-
-    return JobStatusResponse(
-        job_id=job_id,
-        status=job["status"],
-        video_id=job["video_id"],
-        message=job["message"]
-    )
+    if task_result.state == 'PENDING':
+        return JobStatusResponse(job_id=job_id, status="processing", video_id=None, message="Still in queue...")
+    elif task_result.state == 'SUCCESS':
+        return JobStatusResponse(job_id=job_id, status="completed", video_id=task_result.result["video_id"], message="Done!")
+    elif task_result.state == 'FAILURE':
+        info = task_result.info
+        if isinstance(info, dict):
+            error_msg = info.get("message", "An unknown error occurred.")
+        else:
+            error_msg = str(info)  # Raw exception → convert to string
+        return JobStatusResponse(job_id=job_id, status="failed", video_id=None, message=error_msg)
