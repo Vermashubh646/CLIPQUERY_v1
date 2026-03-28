@@ -23,16 +23,19 @@ jobs:
         run: |
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/clipquery:latest .
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/clipquery:latest
+        
+      - name: Trigger Deploy Render
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
 
       # Step 4: SSH into EC2 and restart the API
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/clipquery:latest
-            sudo docker stop clipquery-api || true
-            sudo docker rm clipquery-api || true
-            sudo docker run -d --name clipquery-api -p 8000:8000 --env-file /home/ubuntu/.env ${{ secrets.DOCKERHUB_USERNAME }}/clipquery:latest
+      # - name: Deploy to EC2
+      #   uses: appleboy/ssh-action@v1.0.3
+      #   with:
+      #     host: ${{ secrets.EC2_HOST }}
+      #     username: ${{ secrets.EC2_USERNAME }}
+      #     key: ${{ secrets.EC2_SSH_KEY }}
+      #     script: |
+      #       sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/clipquery:latest
+      #       sudo docker stop clipquery-api || true
+      #       sudo docker rm clipquery-api || true
+      #       sudo docker run -d --name clipquery-api -p 8000:8000 --env-file /home/ubuntu/.env ${{ secrets.DOCKERHUB_USERNAME }}/clipquery:latest
